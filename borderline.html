@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Borderline – the daily neighbor game</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap">
+<style>
+:root{
+  --bg1:#dbeafe;--bg2:#bfdbfe;--bg3:#e0f2fe;
+  --ink:#16314f;--mute:#5b7a9d;--blue:#7fb2e8;--blue-d:#4a8fd6;
+  --glass:rgba(255,255,255,.45);--glass-b:rgba(255,255,255,.75);--shadow:0 10px 40px rgba(60,110,170,.18);
+  --cream:#f8f1dd;--cream-s:#e6d9b6;--ok:#6cc59a;--bad:#e58a8a;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){--bg1:#0f2540;--bg2:#17365c;--bg3:#0c1d33;--ink:#e6f0fc;--mute:#9bb5d3;--glass:rgba(255,255,255,.08);--glass-b:rgba(255,255,255,.18);--shadow:0 10px 40px rgba(0,0,0,.35)}
+}
+:root[data-theme="dark"]{--bg1:#0f2540;--bg2:#17365c;--bg3:#0c1d33;--ink:#e6f0fc;--mute:#9bb5d3;--glass:rgba(255,255,255,.08);--glass-b:rgba(255,255,255,.18);--shadow:0 10px 40px rgba(0,0,0,.35)}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{font-family:"Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);background:linear-gradient(160deg,var(--bg1),var(--bg2) 55%,var(--bg3));background-attachment:fixed;overflow-x:hidden}
+.orb{position:fixed;border-radius:50%;filter:blur(60px);opacity:.7;z-index:0;animation:float 14s ease-in-out infinite}
+.o1{width:340px;height:340px;background:#93c5fd;top:-80px;left:-80px}
+.o2{width:300px;height:300px;background:#bae6fd;bottom:-60px;right:-60px;animation-delay:-6s}
+@keyframes float{50%{transform:translate(30px,40px) scale(1.1)}}
+.app{position:relative;z-index:1;max-width:520px;margin:0 auto;padding:18px 16px 32px;display:flex;flex-direction:column;gap:14px}
+.glass{background:var(--glass);backdrop-filter:blur(22px) saturate(160%);-webkit-backdrop-filter:blur(22px) saturate(160%);border:1px solid var(--glass-b);border-radius:28px;box-shadow:var(--shadow)}
+header{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;animation:rise .7s cubic-bezier(.2,.8,.2,1) both}
+h1{font-size:1.25rem;margin:0;font-weight:800;letter-spacing:-.02em}
+h1 span{color:var(--blue-d)}
+.pill{font-size:.75rem;font-weight:600;color:var(--mute);padding:6px 12px;border-radius:99px;background:var(--glass);border:1px solid var(--glass-b)}
+.lives{display:flex;gap:6px}
+.lives i{width:10px;height:10px;border-radius:50%;background:var(--blue-d);transition:transform .4s cubic-bezier(.34,1.56,.64,1),opacity .4s,background .4s}
+.lives i.off{transform:scale(.5);opacity:.25;background:var(--bad)}
+.mapcard{padding:10px;animation:rise .7s .08s cubic-bezier(.2,.8,.2,1) both}
+.mapcard.shake{animation:shake .45s}
+@keyframes shake{20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(3px)}}
+@keyframes rise{from{opacity:0;transform:translateY(18px) scale(.98)}}
+svg{width:100%;height:auto;display:block}
+.slot{transform-box:fill-box;transform-origin:center;opacity:.9;animation:breathe 4s ease-in-out infinite}
+.slot path{fill:rgba(255,255,255,.28);stroke:var(--blue);stroke-width:1.5;stroke-dasharray:4 5;transition:fill .6s,stroke .6s}
+.slot text{fill:#3b5578;font-size:9.5px;font-weight:700;text-anchor:middle;opacity:0;transition:opacity .5s .3s;pointer-events:none}
+.slot.on{animation:pop .7s cubic-bezier(.34,1.56,.64,1) both}
+.slot.on path{fill:var(--cream);stroke:var(--cream-s);stroke-dasharray:none;filter:drop-shadow(0 6px 8px rgba(90,70,20,.18))}
+.slot.on text{opacity:1}
+@keyframes breathe{50%{transform:scale(1.04)}}
+@keyframes pop{0%{transform:scale(.4);opacity:0}100%{transform:scale(1);opacity:1}}
+#core{transform-box:fill-box;transform-origin:center}
+#core path{fill:var(--cream);stroke:var(--cream-s);stroke-width:2;filter:drop-shadow(0 10px 14px rgba(90,70,20,.22))}
+#core text{fill:#3b5578;font-weight:800;text-anchor:middle}
+#core.win{animation:pop .8s cubic-bezier(.34,1.56,.64,1)}
+.ring{fill:none;stroke:var(--blue-d);stroke-width:2;opacity:0;transform-box:fill-box;transform-origin:center}
+.ring.go{animation:ring 1s ease-out}
+@keyframes ring{0%{opacity:.8;transform:scale(.8)}100%{opacity:0;transform:scale(2.2)}}
+.clues{padding:14px;display:flex;flex-wrap:wrap;gap:8px;animation:rise .7s .16s cubic-bezier(.2,.8,.2,1) both}
+.clues h2{width:100%;margin:0 0 2px;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);display:flex;justify-content:space-between;align-items:center}
+.chip{font-size:.8rem;font-weight:600;padding:8px 14px;border-radius:99px;background:rgba(255,255,255,.35);border:1px solid var(--glass-b);color:var(--mute);transition:all .5s cubic-bezier(.34,1.56,.64,1)}
+.chip.on{background:var(--blue);color:#0d2a4a;transform:scale(1.04);border-color:transparent}
+.chip.fresh{animation:pop .6s cubic-bezier(.34,1.56,.64,1)}
+.inputwrap{position:relative;animation:rise .7s .24s cubic-bezier(.2,.8,.2,1) both}
+.bar{display:flex;gap:8px;padding:8px}
+input{flex:1;min-width:0;border:0;outline:0;background:rgba(255,255,255,.55);color:#16314f;font:600 1rem inherit;font-family:inherit;padding:14px 18px;border-radius:20px;transition:box-shadow .3s,background .3s}
+input:focus{box-shadow:0 0 0 3px var(--blue);background:rgba(255,255,255,.85)}
+input::placeholder{color:#7d98b8}
+button{font-family:inherit;font-weight:800;border:0;border-radius:20px;padding:0 22px;background:var(--blue-d);color:#fff;cursor:pointer;transition:transform .25s cubic-bezier(.34,1.56,.64,1),box-shadow .25s,filter .25s;box-shadow:0 6px 16px rgba(74,143,214,.4)}
+button:hover{transform:translateY(-2px) scale(1.03);filter:brightness(1.05)}
+button:active{transform:scale(.94)}
+button:disabled{opacity:.5;pointer-events:none}
+.list{position:absolute;left:0;right:0;top:calc(100% + 8px);z-index:5;padding:6px;margin:0;list-style:none;max-height:240px;overflow:auto;opacity:0;transform:translateY(-8px) scale(.98);pointer-events:none;transition:all .25s cubic-bezier(.2,.8,.2,1);background:var(--glass-b);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px)}
+.list.open{opacity:1;transform:none;pointer-events:auto}
+.list li{padding:11px 16px;border-radius:16px;font-weight:600;cursor:pointer;transition:background .2s,transform .2s;color:var(--ink)}
+.list li.sel,.list li:hover{background:var(--blue);color:#0d2a4a;transform:translateX(4px)}
+.guesses{display:flex;flex-wrap:wrap;gap:8px;min-height:10px}
+.g{font-size:.85rem;font-weight:700;padding:9px 16px;border-radius:99px;animation:pop .5s cubic-bezier(.34,1.56,.64,1) both;border:1px solid var(--glass-b);backdrop-filter:blur(10px)}
+.g.hit,.g.win{background:rgba(108,197,154,.55)}
+.g.miss{background:rgba(229,138,138,.4)}
+.hint{text-align:center;font-size:.8rem;color:var(--mute);margin:0}
+.toast{position:fixed;left:50%;top:calc(18px + env(safe-area-inset-top,0px));transform:translate(-50%,-80px);z-index:20;padding:12px 20px;border-radius:99px;font-weight:700;font-size:.9rem;transition:transform .5s cubic-bezier(.34,1.56,.64,1)}
+.toast.show{transform:translate(-50%,0)}
+.modal{position:fixed;inset:0;z-index:30;display:grid;place-items:center;padding:20px;background:rgba(20,50,90,.25);backdrop-filter:blur(6px);opacity:0;pointer-events:none;transition:opacity .4s}
+.modal.open{opacity:1;pointer-events:auto}
+.modal .card{max-width:380px;width:100%;padding:28px;text-align:center;transform:translateY(30px) scale(.94);transition:transform .6s cubic-bezier(.34,1.56,.64,1)}
+.modal.open .card{transform:none}
+.card h3{margin:0 0 6px;font-size:1.6rem;letter-spacing:-.02em}
+.card p{color:var(--mute);margin:0 0 16px}
+.emoji{font-size:1.6rem;letter-spacing:4px;margin-bottom:18px;word-break:break-all}
+.row{display:flex;gap:10px;justify-content:center}
+.row button{padding:14px 20px}
+.ghost{background:var(--glass-b);color:var(--ink);box-shadow:none}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+#cnote{text-transform:none;letter-spacing:0;font-weight:700}
+svg path{vector-effect:non-scaling-stroke}
+.land{transform-box:fill-box;transform-origin:center}
+.land path{fill:rgba(255,255,255,.2);stroke:var(--blue-d);stroke-opacity:.6;stroke-width:1.4px;stroke-dasharray:4 4;stroke-linejoin:round;transition:fill .7s,stroke .7s}
+.land text{fill:#3b5578;font-weight:800;text-anchor:middle;dominant-baseline:central;opacity:0;transition:opacity .5s .35s;paint-order:stroke;stroke:#f8f1dd;pointer-events:none}
+.land.on{animation:land .8s cubic-bezier(.34,1.56,.64,1) both}
+.land.on path{fill:var(--cream);stroke:#c9b98c;stroke-opacity:1;stroke-dasharray:none;filter:drop-shadow(0 4px 6px rgba(90,70,20,.2))}
+.land.on text{opacity:1}
+@keyframes land{0%{opacity:.3;transform:scale(.93)}100%{opacity:1;transform:none}}
+#core path{fill:var(--cream);stroke:#c9b98c;stroke-width:1.6px;filter:drop-shadow(0 6px 10px rgba(90,70,20,.25))}
+#core text{dominant-baseline:central;paint-order:stroke;stroke:#f8f1dd;stroke-width:.6px}
+#core.win{animation:winp .9s cubic-bezier(.34,1.56,.64,1)}
+@keyframes winp{0%{transform:scale(.95)}50%{transform:scale(1.04)}100%{transform:none}}
+.ring{stroke-width:2px}
+#mapcard svg{border-radius:20px;background:rgba(255,255,255,.18)}
+.modal .card{max-width:420px;max-height:90vh;overflow:auto}
+.dots{display:flex;gap:8px;justify-content:center;margin-bottom:14px}
+.dots i{width:28px;height:6px;border-radius:9px;background:var(--glass-b);transition:background .4s,transform .4s}
+.dots i.cur{background:var(--blue-d)}.dots i.ok{background:var(--ok)}.dots i.no{background:var(--bad)}
+#qq{font-size:1.15rem;line-height:1.35;margin:0 0 12px}
+.opt{display:block;width:100%;padding:14px 18px;margin:8px 0;text-align:left;background:var(--glass-b);color:var(--ink);box-shadow:none;border:1px solid var(--glass-b);border-radius:18px;animation:rise .5s cubic-bezier(.2,.8,.2,1) both}
+.opt:hover{background:var(--blue);color:#0d2a4a}
+.opt.ok{background:var(--ok)!important;color:#0d3a24!important;transform:scale(1.02)}
+.opt.no{background:var(--bad)!important;color:#4a1111!important;animation:shake .4s}
+.opt.dim{opacity:.45;pointer-events:none}
+#qexp{min-height:3em;font-size:.9rem;color:var(--mute);opacity:0;transform:translateY(6px);transition:all .4s;margin:10px 0}
+#qexp.show{opacity:1;transform:none}
+#qnext{padding:14px 26px}
+.emoji{white-space:pre-line}
+#reopen{align-self:center;padding:12px 22px}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/d3@3.5.17/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson@1.6.27/build/topojson.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/datamaps@0.5.9/dist/datamaps.world.min.js"></script>
+</head>
+<body>
+<div class="orb o1"></div><div class="orb o2"></div>
+<main class="app">
+  <header class="glass">
+    <h1>Border<span>line</span></h1>
+    <span class="pill" id="day">Daily</span>
+    <div class="lives" id="lives"></div>
+  </header>
+  <section class="glass mapcard" id="mapcard">
+    <svg id="map" viewBox="0 0 420 420" role="img" aria-label="Mystery country outline with its neighbors hidden"></svg>
+  </section>
+  <section class="glass clues"><h2><span>Clues</span><span id="cnote"></span></h2><div id="chips" style="display:contents"></div></section>
+  <div class="inputwrap">
+    <div class="glass bar"><input id="in" placeholder="Name a neighbor or the country…" autocomplete="off" spellcheck="false"><button id="go">Guess</button></div>
+    <ul class="glass list" id="list"></ul>
+  </div>
+  <div class="guesses" id="guesses"></div>
+  <button class="ghost" id="reopen" hidden>Results &amp; trivia</button>
+  <p class="hint">Fill every dashed border, or name the mystery country. Six misses and it’s over.</p>
+</main>
+<div class="glass toast" id="toast"></div>
+<div class="modal" id="modal"><div class="glass card"><div id="res"><h3 id="mt"></h3><p id="ms"></p><div class="emoji" id="me"></div><div class="row" style="flex-wrap:wrap"><button id="tstart">Trivia time →</button><button class="ghost" id="share">Share</button><button class="ghost" id="rand">Play random</button></div></div><div id="quiz" hidden><div class="dots" id="qdots"></div><h3 id="qq"></h3><div id="qopts"></div><p id="qexp"></p><button id="qnext" hidden>Next →</button></div></div></div>
+<script>
+const MAX=6,$=s=>document.querySelector(s),NS="http://www.w3.org/2000/svg";
+const CN={E:"Europe",A:"Asia",F:"Africa",N:"North America",S:"South America",O:"Oceania"};
+const INFO={};
+`AFG|Afghanistan|Kabul|A|42
+ALB|Albania|Tirana|E|2.8
+DZA|Algeria|Algiers|F|46
+AGO|Angola|Luanda|F|37
+ARG|Argentina|Buenos Aires|S|46
+ARM|Armenia|Yerevan|A|3
+AUS|Australia|Canberra|O|26
+AUT|Austria|Vienna|E|9
+AZE|Azerbaijan|Baku|A|10
+BHS|Bahamas|Nassau|N|0.4
+BGD|Bangladesh|Dhaka|A|173
+BLR|Belarus|Minsk|E|9
+BEL|Belgium|Brussels|E|12
+BLZ|Belize|Belmopan|N|0.4
+BEN|Benin|Porto-Novo|F|14
+BTN|Bhutan|Thimphu|A|0.8
+BOL|Bolivia|Sucre|S|12
+BIH|Bosnia and Herzegovina|Sarajevo|E|3.2
+BWA|Botswana|Gaborone|F|2.6
+BRA|Brazil|Brasília|S|216
+BRN|Brunei|Bandar Seri Begawan|A|0.45
+BGR|Bulgaria|Sofia|E|6.5
+BFA|Burkina Faso|Ouagadougou|F|23
+BDI|Burundi|Gitega|F|13
+KHM|Cambodia|Phnom Penh|A|17
+CMR|Cameroon|Yaoundé|F|28
+CAN|Canada|Ottawa|N|40
+CAF|Central African Republic|Bangui|F|5.7
+TCD|Chad|N’Djamena|F|18
+CHL|Chile|Santiago|S|19.6
+CHN|China|Beijing|A|1410
+COL|Colombia|Bogotá|S|52
+COG|Republic of the Congo|Brazzaville|F|6
+COD|DR Congo|Kinshasa|F|102
+CRI|Costa Rica|San José|N|5.2
+CIV|Ivory Coast|Yamoussoukro|F|28
+HRV|Croatia|Zagreb|E|3.9
+CUB|Cuba|Havana|N|11
+CYP|Cyprus|Nicosia|E|1.3
+CZE|Czechia|Prague|E|10.9
+DNK|Denmark|Copenhagen|E|5.9
+DJI|Djibouti|Djibouti|F|1.1
+DOM|Dominican Republic|Santo Domingo|N|11.3
+ECU|Ecuador|Quito|S|18
+EGY|Egypt|Cairo|F|112
+SLV|El Salvador|San Salvador|N|6.3
+GNQ|Equatorial Guinea|Malabo|F|1.7
+ERI|Eritrea|Asmara|F|3.7
+EST|Estonia|Tallinn|E|1.4
+ETH|Ethiopia|Addis Ababa|F|126
+FJI|Fiji|Suva|O|0.9
+FIN|Finland|Helsinki|E|5.6
+FRA|France|Paris|E|68
+GAB|Gabon|Libreville|F|2.4
+GMB|Gambia|Banjul|F|2.7
+GEO|Georgia|Tbilisi|A|3.7
+DEU|Germany|Berlin|E|84
+GHA|Ghana|Accra|F|34
+GRC|Greece|Athens|E|10.4
+GTM|Guatemala|Guatemala City|N|18
+GIN|Guinea|Conakry|F|14
+GNB|Guinea-Bissau|Bissau|F|2.1
+GUY|Guyana|Georgetown|S|0.8
+HTI|Haiti|Port-au-Prince|N|11.7
+HND|Honduras|Tegucigalpa|N|10.6
+HUN|Hungary|Budapest|E|9.6
+ISL|Iceland|Reykjavík|E|0.4
+IND|India|New Delhi|A|1430
+IDN|Indonesia|Jakarta|A|278
+IRN|Iran|Tehran|A|89
+IRQ|Iraq|Baghdad|A|45
+IRL|Ireland|Dublin|E|5.2
+ISR|Israel|Jerusalem|A|9.8
+ITA|Italy|Rome|E|59
+JAM|Jamaica|Kingston|N|2.8
+JPN|Japan|Tokyo|A|124
+JOR|Jordan|Amman|A|11.3
+KAZ|Kazakhstan|Astana|A|20
+KEN|Kenya|Nairobi|F|55
+PRK|North Korea|Pyongyang|A|26
+KOR|South Korea|Seoul|A|52
+KWT|Kuwait|Kuwait City|A|4.3
+KGZ|Kyrgyzstan|Bishkek|A|7
+LAO|Laos|Vientiane|A|7.6
+LVA|Latvia|Riga|E|1.9
+LBN|Lebanon|Beirut|A|5.4
+LSO|Lesotho|Maseru|F|2.3
+LBR|Liberia|Monrovia|F|5.4
+LBY|Libya|Tripoli|F|6.9
+LTU|Lithuania|Vilnius|E|2.9
+LUX|Luxembourg|Luxembourg City|E|0.66
+MKD|North Macedonia|Skopje|E|1.8
+MDG|Madagascar|Antananarivo|F|30
+MWI|Malawi|Lilongwe|F|21
+MYS|Malaysia|Kuala Lumpur|A|34
+MLI|Mali|Bamako|F|23
+MRT|Mauritania|Nouakchott|F|4.9
+MEX|Mexico|Mexico City|N|128
+MDA|Moldova|Chișinău|E|2.6
+MNG|Mongolia|Ulaanbaatar|A|3.4
+MNE|Montenegro|Podgorica|E|0.62
+MAR|Morocco|Rabat|F|37
+MOZ|Mozambique|Maputo|F|34
+MMR|Myanmar|Naypyidaw|A|55
+NAM|Namibia|Windhoek|F|2.6
+NPL|Nepal|Kathmandu|A|30
+NLD|Netherlands|Amsterdam|E|17.9
+NZL|New Zealand|Wellington|O|5.2
+NIC|Nicaragua|Managua|N|7
+NER|Niger|Niamey|F|27
+NGA|Nigeria|Abuja|F|224
+NOR|Norway|Oslo|E|5.5
+OMN|Oman|Muscat|A|4.6
+PAK|Pakistan|Islamabad|A|240
+PAN|Panama|Panama City|N|4.4
+PNG|Papua New Guinea|Port Moresby|O|10
+PRY|Paraguay|Asunción|S|6.8
+PER|Peru|Lima|S|34
+PHL|Philippines|Manila|A|117
+POL|Poland|Warsaw|E|38
+PRT|Portugal|Lisbon|E|10.4
+QAT|Qatar|Doha|A|2.7
+ROU|Romania|Bucharest|E|19
+RUS|Russia|Moscow|E|144
+RWA|Rwanda|Kigali|F|14
+SAU|Saudi Arabia|Riyadh|A|36
+SEN|Senegal|Dakar|F|18
+SRB|Serbia|Belgrade|E|6.7
+SLE|Sierra Leone|Freetown|F|8.6
+SVK|Slovakia|Bratislava|E|5.4
+SVN|Slovenia|Ljubljana|E|2.1
+SLB|Solomon Islands|Honiara|O|0.7
+SOM|Somalia|Mogadishu|F|18
+ZAF|South Africa|Pretoria|F|60
+SSD|South Sudan|Juba|F|11
+ESP|Spain|Madrid|E|48
+LKA|Sri Lanka|Colombo|A|22
+SDN|Sudan|Khartoum|F|48
+SUR|Suriname|Paramaribo|S|0.6
+SWZ|Eswatini|Mbabane|F|1.2
+SWE|Sweden|Stockholm|E|10.5
+CHE|Switzerland|Bern|E|8.8
+SYR|Syria|Damascus|A|23
+TJK|Tajikistan|Dushanbe|A|10
+TZA|Tanzania|Dodoma|F|67
+THA|Thailand|Bangkok|A|72
+TLS|Timor-Leste|Dili|A|1.4
+TGO|Togo|Lomé|F|9
+TTO|Trinidad and Tobago|Port of Spain|N|1.5
+TUN|Tunisia|Tunis|F|12
+TUR|Turkey|Ankara|A|85
+TKM|Turkmenistan|Ashgabat|A|6.5
+UGA|Uganda|Kampala|F|49
+UKR|Ukraine|Kyiv|E|38
+ARE|United Arab Emirates|Abu Dhabi|A|10
+GBR|United Kingdom|London|E|68
+USA|United States|Washington, D.C.|N|335
+URY|Uruguay|Montevideo|S|3.4
+UZB|Uzbekistan|Tashkent|A|36
+VUT|Vanuatu|Port Vila|O|0.33
+VEN|Venezuela|Caracas|S|28
+VNM|Vietnam|Hanoi|A|99
+YEM|Yemen|Sanaa|A|34
+ZMB|Zambia|Lusaka|F|20
+ZWE|Zimbabwe|Harare|F|16
+TWN|Taiwan|Taipei|A|23.4`.trim().split("\n").forEach(l=>{const[a,n,c,k,p]=l.split("|");INFO[a]={name:n,cap:c,cont:CN[k],pop:+p}});
+const hash=s=>{let h=2166136261;for(const c of String(s)){h^=c.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0};
+const rng=seed=>()=>((seed=Math.imul(seed^seed>>>15,seed|1),seed^=seed+Math.imul(seed^seed>>>7,seed|61),((seed^seed>>>14)>>>0)/4294967296));
+const today=Math.floor((Date.now()-new Date().getTimezoneOffset()*6e4)/864e5);
+const C={};let T,G=[],over=false,daily=true,R={},NAMES=[],nameId={},quiz=[],qi=0,qs=[];
+
+function load(){
+  const W=window.Datamap&&Datamap.prototype.worldTopo;if(!W)return false;
+  const obj=Object.values(W.objects)[0],tr=W.transform;
+  const ARC=W.arcs.map(a=>{let x=0,y=0;return a.map(p=>{if(!tr)return p;x+=p[0];y+=p[1];return[x*tr.scale[0]+tr.translate[0],y*tr.scale[1]+tr.translate[1]]})});
+  const pts=i=>i<0?ARC[~i].slice().reverse():ARC[i];
+  const ring=r=>{let o=[];r.forEach(i=>{const a=pts(i);o=o.concat(o.length?a.slice(1):a)});return o};
+  const flat=(a,s)=>Array.isArray(a)?a.forEach(x=>flat(x,s)):s.add(a<0?~a:a);
+  const ar=r=>{const k=Math.cos(r.reduce((a,p)=>a+p[1],0)/r.length*Math.PI/180);let s=0;for(let i=0;i<r.length;i++){const a=r[i],b=r[(i+1)%r.length];s+=a[0]*k*b[1]-b[0]*k*a[1]}return Math.abs(s)/2};
+  const owner={};
+  obj.geometries.forEach(g=>{
+    if(!INFO[g.id]||!g.arcs)return;
+    const polys=(g.type==="Polygon"?[g.arcs]:g.arcs).map(rs=>rs.map(ring));
+    const s=new Set();flat(g.arcs,s);s.forEach(a=>(owner[a]=owner[a]||[]).push(g.id));
+    const pa=polys.map(p=>ar(p[0])-p.slice(1).reduce((t,r)=>t+ar(r),0)),mx=Math.max(...pa);
+    const main=polys.filter((p,i)=>pa[i]>=.3*mx);
+    const b=[1e9,-1e9,1e9,-1e9];main.forEach(p=>p[0].forEach(q=>{b[0]=Math.min(b[0],q[0]);b[1]=Math.max(b[1],q[0]);b[2]=Math.min(b[2],q[1]);b[3]=Math.max(b[3],q[1])}));
+    C[g.id]={polys,main,b,pa,area:pa.reduce((t,v)=>t+v,0)*12356,nb:new Set()};
+  });
+  for(const a in owner){const o=owner[a];o.forEach(x=>o.forEach(y=>{if(x!==y)C[x].nb.add(y)}))}
+  [["FRA","BRA"],["FRA","SUR"]].forEach(([a,b])=>{C[a]&&C[a].nb.delete(b);C[b]&&C[b].nb.delete(a)});
+  for(const id in C)for(const n of C[id].nb)C[n].nb.add(id);
+  NAMES=Object.keys(C).map(i=>INFO[i].name).sort();NAMES.forEach(n=>nameId[n]=Object.keys(C).find(i=>INFO[i].name===n));
+  return true;
+}
+function el(t,a,p){const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);(p||$("#map")).appendChild(e);return e}
+function build(){
+  const c=C[T],m=$("#map");m.innerHTML="";R={};
+  const lat0=(c.b[2]+c.b[3])/2,lon0=(c.b[0]+c.b[1])/2,k=Math.cos(lat0*Math.PI/180);
+  const s=Math.max(Math.max((c.b[1]-c.b[0])*k,c.b[3]-c.b[2],6)*1.35,6);
+  const pr=q=>[(q[0]-lon0)*k,-(q[1]-lat0)];
+  m.setAttribute("viewBox",`${-s/2} ${-s/2} ${s} ${s}`);
+  const path=P=>P.map(p=>p.map(r=>"M"+r.map(q=>{const a=pr(q);return a[0].toFixed(2)+" "+a[1].toFixed(2)}).join("L")+"Z").join("")).join("");
+  const cen=P=>{let x=0,y=0,n=0;P.forEach(p=>p[0].forEach(q=>{const a=pr(q);if(Math.abs(a[0])<s*.46&&Math.abs(a[1])<s*.46){x+=a[0];y+=a[1];n++}}));return n?[x/n,y/n]:null};
+  [...c.nb].forEach(id=>{
+    const g=el("g",{class:"land"});el("path",{d:path(C[id].polys),"fill-rule":"evenodd"},g);
+    const p=cen(C[id].polys);
+    if(p){const t=el("text",{x:p[0],y:p[1]},g);t.textContent=INFO[id].name;t.style.fontSize=s*.034+"px";t.style.strokeWidth=s*.012+"px"}
+    R[id]=g;
+  });
+  const core=el("g",{id:"core"});
+  el("path",{d:path(c.polys),"fill-rule":"evenodd"},core);
+  const p=cen(c.main)||[0,0];
+  const ring=el("circle",{class:"ring",id:"ring",cx:p[0],cy:p[1],r:s*.12},core);
+  const t=el("text",{x:p[0],y:p[1],id:"ctext"},core);t.textContent="?";t.style.fontSize=s*.1+"px";t.dataset.s=s;t.setAttribute("dy",".35em");
+}
+const kind=g=>g===T?"win":C[T].nb.has(g)?"hit":"miss";
+const misses=()=>G.filter(g=>kind(g)==="miss").length;
+function clueCount(){const h=G.filter(g=>kind(g)==="hit").length;return Math.min(5,1+h+(C[T].nb.size<3?misses():0))}
+function paint(fresh){
+  const c=C[T],I=INFO[T],n=clueCount(),lat=(c.b[2]+c.b[3])/2,lon=(c.b[0]+c.b[1])/2;
+  const cl=["Continent: "+I.cont,"Population: about "+fmtPop(I.pop),"Capital starts with “"+I.cap[0]+"”","Mostly in the "+(lat>=0?"Northern":"Southern")+" & "+(lon>=0?"Eastern":"Western")+" hemisphere","Name starts with “"+I.name[0]+"”"];
+  $("#cnote").textContent=G.filter(g=>kind(g)==="hit").length+" / "+c.nb.size+" borders found";
+  $("#chips").innerHTML=cl.map((x,i)=>`<span class="chip ${i<n?"on":""} ${fresh&&i==n-1?"fresh":""}">${i<n?x:"🔒 Locked"}</span>`).join("");
+  $("#lives").innerHTML=Array.from({length:MAX},(_,i)=>`<i class="${i<misses()?"off":""}"></i>`).join("");
+  $("#guesses").innerHTML=G.map(g=>`<span class="g ${kind(g)}">${INFO[g].name}</span>`).join("");
+}
+function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove("show"),1800)}
+function shake(){const m=$("#mapcard");m.classList.remove("shake");void m.offsetWidth;m.classList.add("shake")}
+function save(){if(!daily)return;try{localStorage.setItem("borderline2",JSON.stringify({day:today,g:G}))}catch(e){}}
+function guess(id,quiet){
+  if(over||G.includes(id))return;
+  G.push(id);const k=kind(id);
+  if(k==="hit"){R[id].classList.add("on");if(!quiet)toast("✓ "+INFO[id].name+" borders it")}
+  if(k==="miss"&&!quiet){toast("No border with "+INFO[id].name);shake()}
+  paint(!quiet);save();
+  const all=C[T].nb.size&&[...C[T].nb].every(n=>G.includes(n));
+  if(k==="win"||all)end(true,quiet);else if(misses()>=MAX)end(false,quiet);
+}
+function end(win,quiet){
+  over=true;[...C[T].nb].forEach((n,i)=>setTimeout(()=>R[n].classList.add("on"),quiet?0:i*110));
+  const t=$("#ctext");t.textContent=INFO[T].name;t.style.fontSize=t.dataset.s*.045+"px";
+  $("#core").classList.add("win");$("#ring").classList.add("go");
+  $("#in").disabled=$("#go").disabled=true;$("#reopen").hidden=false;
+  const x=misses();
+  $("#mt").textContent=win?"You found it!":"So close";
+  $("#ms").textContent=win?`${INFO[T].name} · ${x} miss${x==1?"":"es"} · ${G.length} guesses`:`It was ${INFO[T].name}.`;
+  $("#me").textContent=G.map(g=>({hit:"🟩",miss:"⬛",win:"🏁"})[kind(g)]).join("");
+  showView("res");$("#tstart").hidden=false;
+  setTimeout(()=>$("#modal").classList.add("open"),quiet?250:1200);
+}
+// ---------- trivia ----------
+const fmtPop=p=>p>=1000?(p/1000).toFixed(1)+" billion":p>=1?(p<10?p.toFixed(1):Math.round(p))+" million":Math.round(p*1000)+" thousand";
+const sig=v=>{const m=Math.pow(10,Math.floor(Math.log10(v))-1);return Math.round(v/m)*m};
+const fmtA=v=>"about "+sig(v).toLocaleString("en-US")+" km²";
+function makeQuiz(){
+  const r=rng(hash(T+(daily?today:Math.random()))),I=INFO[T],c=C[T],others=Object.keys(C).filter(i=>i!==T),n=c.nb.size;
+  const pick=(a,k)=>{a=a.slice();const o=[];while(o.length<k&&a.length)o.push(a.splice(Math.floor(r()*a.length),1)[0]);return o};
+  const mk=(q,right,wrong,e)=>{const o=[right,...wrong];for(let i=o.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[o[i],o[j]]=[o[j],o[i]]}return{q,o,a:o.indexOf(right),e}};
+  const nbs=[...c.nb].map(i=>INFO[i].name);
+  return[
+    mk(`What is the capital of ${I.name}?`,I.cap,pick(others.map(i=>INFO[i].cap),3),`${I.cap} is the capital of ${I.name}.`),
+    mk(`Which continent is ${I.name} in?`,I.cont,pick(Object.values(CN).filter(x=>x!==I.cont),3),`${I.name} is in ${I.cont}.`),
+    mk(`Roughly how many people live in ${I.name}?`,fmtPop(I.pop),pick([.2,.4,2.5,5],3).map(f=>fmtPop(I.pop*f)),`${I.name} has roughly ${fmtPop(I.pop)} people.`),
+    mk(`About how large is ${I.name}?`,fmtA(c.area),pick([.3,.5,2,3.5],3).map(f=>fmtA(c.area*f)),`${I.name} covers ${fmtA(c.area)} (approximate).`),
+    n?mk(`Which of these countries shares a land border with ${I.name}?`,pick(nbs,1)[0],pick(others.filter(i=>!c.nb.has(i)).map(i=>INFO[i].name),3),`${I.name} borders ${nbs.slice(0,8).join(", ")}${n>8?" and more":""}.`)
+     :mk(`How many land borders does ${I.name} have?`,"None",["One","Two","Three or more"],`${I.name} has no land borders with other countries.`)
+  ];
+}
+function showView(v){$("#res").hidden=v!=="res";$("#quiz").hidden=v!=="quiz"}
+function ask(){
+  const q=quiz[qi];showView("quiz");
+  $("#qdots").innerHTML=quiz.map((_,i)=>`<i class="${i<qi?(qs[i]?"ok":"no"):i===qi?"cur":""}"></i>`).join("");
+  $("#qq").textContent=`${qi+1}. ${q.q}`;$("#qexp").textContent="";$("#qexp").classList.remove("show");$("#qnext").hidden=true;
+  $("#qopts").innerHTML=q.o.map((o,i)=>`<button class="opt" data-i="${i}" style="animation-delay:${i*70}ms">${o}</button>`).join("");
+}
+function answer(i){
+  const q=quiz[qi];if(qs[qi]!==undefined)return;
+  qs[qi]=i===q.a;
+  [...$("#qopts").children].forEach((b,j)=>{b.classList.add(j===q.a?"ok":j===i?"no":"dim")});
+  $("#qexp").textContent=(qs[qi]?"Correct! ":"Not quite. ")+q.e;$("#qexp").classList.add("show");
+  $("#qdots").children[qi].className=qs[qi]?"ok":"no";
+  $("#qnext").textContent=qi<4?"Next →":"See score";$("#qnext").hidden=false;
+}
+function finishQuiz(){
+  const sc=qs.filter(Boolean).length;
+  $("#mt").textContent=`Trivia: ${sc} / 5`;
+  $("#ms").textContent=["Time to hit the atlas!","Getting there.","Solid.","Well traveled!","Cartographer level.","Perfect score!"][sc];
+  $("#me").textContent=$("#me").textContent.split("\n")[0]+"\n"+qs.map(x=>x?"🟩":"🟥").join("");
+  $("#tstart").hidden=true;showView("res");
+}
+// ---------- input ----------
+let sel=0,opts=[];
+function suggest(){
+  const v=$("#in").value.trim().toLowerCase(),l=$("#list");
+  opts=v?NAMES.filter(n=>!G.includes(nameId[n])&&n.toLowerCase().includes(v)).sort((a,b)=>(b.toLowerCase().startsWith(v))-(a.toLowerCase().startsWith(v))).slice(0,6):[];
+  sel=0;l.innerHTML=opts.map((o,i)=>`<li class="${i?"":"sel"}" data-n="${o}">${o}</li>`).join("");l.classList.toggle("open",opts.length>0);
+}
+function submit(){
+  const n=opts[sel];
+  if(!n){shake();toast("Pick a country from the list");return}
+  $("#in").value="";suggest();guess(nameId[n]);
+}
+function start(d){
+  daily=d;over=false;G=[];qs=[];qi=0;
+  const ids=Object.keys(C).sort((a,b)=>hash(a)-hash(b));
+  T=daily?ids[today%ids.length]:ids[Math.floor(Math.random()*ids.length)];
+  $("#day").textContent=daily?"Daily #"+(today-20400):"Practice";
+  $("#modal").classList.remove("open");$("#in").disabled=$("#go").disabled=false;$("#in").value="";$("#reopen").hidden=true;
+  build();paint(false);
+  if(daily){try{const s=JSON.parse(localStorage.getItem("borderline2")||"null");if(s&&s.day===today)s.g.forEach(g=>guess(g,true))}catch(e){}}
+}
+$("#in").addEventListener("input",suggest);
+$("#in").addEventListener("keydown",e=>{
+  if(e.key==="Enter")submit();
+  if(e.key==="ArrowDown"||e.key==="ArrowUp"){e.preventDefault();if(!opts.length)return;sel=(sel+(e.key==="ArrowDown"?1:opts.length-1))%opts.length;[...$("#list").children].forEach((c,i)=>c.classList.toggle("sel",i===sel))}
+});
+$("#list").addEventListener("mousedown",e=>{const li=e.target.closest("li");if(li){e.preventDefault();$("#in").value="";const n=li.dataset.n;suggest();guess(nameId[n])}});
+$("#in").addEventListener("blur",()=>$("#list").classList.remove("open"));
+$("#go").onclick=submit;
+$("#rand").onclick=()=>start(false);
+$("#reopen").onclick=()=>$("#modal").classList.add("open");
+$("#tstart").onclick=()=>{quiz=makeQuiz();qi=0;qs=[];ask()};
+$("#qopts").addEventListener("click",e=>{const b=e.target.closest(".opt");if(b)answer(+b.dataset.i)});
+$("#qnext").onclick=()=>{if(qi<4){qi++;ask()}else finishQuiz()};
+$("#share").onclick=async()=>{
+  const txt=`Borderline ${daily?"#"+(today-20400):"practice"}\n${$("#me").textContent}`;
+  try{await navigator.clipboard.writeText(txt);toast("Result copied")}catch(e){toast("Copy not available here")}
+};
+$("#modal").addEventListener("click",e=>{if(e.target.id==="modal")$("#modal").classList.remove("open")});
+if(load())start(true);
+else $("#mapcard").innerHTML='<p style="padding:40px 20px;text-align:center;color:var(--mute);font-weight:600">Couldn’t load the world map data. Check your connection and refresh.</p>';
+</script>
+</body>
+</html>
